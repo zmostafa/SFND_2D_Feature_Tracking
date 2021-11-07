@@ -19,6 +19,11 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
         // ...
+        // Workaroung due to BUG in current opencv implementation
+        if(descSource.type() != CV_32F){
+            descSource.convertTo(descSource, CV_32F);
+            descRef.convertTo(descRef, CV_32F);
+        }
         matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
     }
 
@@ -30,8 +35,6 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
     else if (selectorType.compare("SEL_KNN") == 0)
     { // k nearest neighbors (k=2)
-
-        // ...
         vector<vector<cv::DMatch>> knn_matches;
         matcher->knnMatch(descSource, descRef, knn_matches, 2);
 
@@ -58,10 +61,23 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
-    else
+    // Create BRIEF descriptor.
+    else if(descriptorType.compare("BRIEF") == 0)
     {
-
-        //...
+        extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
+    }
+    // Creating ORB descriptor and detector.
+    else if(descriptorType.compare("ORB")){
+        extractor = cv::ORB::create();
+    }
+    else if(descriptorType.compare("FREAK") == 0){
+        extractor = cv::xfeatures2d::FREAK::create();
+    }
+    else if(descriptorType.compare("AKAZE") == 0){
+        extractor = cv::AKAZE::create();
+    }
+    else if(descriptorType.compare("SIFT") == 0){
+        extractor = cv::xfeatures2d::SIFT::create();
     }
 
     // perform feature description

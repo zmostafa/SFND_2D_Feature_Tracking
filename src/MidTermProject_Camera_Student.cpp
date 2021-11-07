@@ -40,7 +40,6 @@ int main(int argc, const char *argv[])
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
-    queue<DataFrame> ringBuffer;  // Ring Buffer, ToDo : create a class of real ring buffer instead of queue ?.
     /* MAIN LOOP OVER ALL IMAGES */
 
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
@@ -63,10 +62,9 @@ int main(int argc, const char *argv[])
         // push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = imgGray;
-        // dataBuffer.push_back(frame);
-        ringBuffer.push(frame);
-        if(ringBuffer.size() > dataBufferSize){
-            ringBuffer.pop();
+        dataBuffer.push_back(frame);
+        if(dataBuffer.size() > dataBufferSize){
+            dataBuffer.erase(dataBuffer.begin());
         }
 
         //// EOF STUDENT ASSIGNMENT
@@ -76,7 +74,7 @@ int main(int argc, const char *argv[])
 
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = "SHITOMASI";
+        string detectorType = "BRISK";
 
         //// STUDENT ASSIGNMENT
         //// TASK MP.2 -> add the following keypoint detectors in file matching2D.cpp and enable string-based selection based on detectorType
@@ -106,11 +104,14 @@ int main(int argc, const char *argv[])
         if (bFocusOnVehicle)
         {
             // ...
+            vector<cv::KeyPoint> updatedKeypoints;
             for(auto it = keypoints.begin(); it != keypoints.end(); ++it){
-                if( it->pt.x < vehicleRect.x && it->pt.y > vehicleRect.y){
-                    keypoints.erase(it);
+                // if( it->pt.x >= vehicleRect.x && it->pt.y <= vehicleRect.y){
+                if(vehicleRect.contains((*it).pt)){
+                   updatedKeypoints.push_back((*it));
                 }
             }
+            keypoints = updatedKeypoints;
         }
 
         //// EOF STUDENT ASSIGNMENT
