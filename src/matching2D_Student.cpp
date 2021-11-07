@@ -14,6 +14,10 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     if (matcherType.compare("MAT_BF") == 0)
     {
         int normType = cv::NORM_HAMMING;
+        if(descriptorType.compare("DES_HOG") == 0){
+            normType = cv::NORM_L2;
+        }
+
         matcher = cv::BFMatcher::create(normType, crossCheck);
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
@@ -147,16 +151,6 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
     cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
     cv::convertScaleAbs(dst_norm, dst_norm_scaled);
 
-    // visualize results
-    string windowName = "Harris Corner Detector Response Matrix";
-    cv::namedWindow(windowName, 4);
-    cv::imshow(windowName, dst_norm_scaled);
-    cv::waitKey(0);
-
-    // STUDENTS NEET TO ENTER THIS CODE (C3.2 Atom 4)
-
-    // Look for prominent corners and instantiate keypoints
-    vector<cv::KeyPoint> keypoints;
     double maxOverlap = 0.0; // max. permissible overlap between two features in %, used during non-maxima suppression
     for (size_t j = 0; j < dst_norm.rows; j++)
     {
