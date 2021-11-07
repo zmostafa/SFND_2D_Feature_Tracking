@@ -19,6 +19,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
         // ...
+        matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
     }
 
     // perform matching task
@@ -31,6 +32,15 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     { // k nearest neighbors (k=2)
 
         // ...
+        vector<vector<cv::DMatch>> knn_matches;
+        matcher->knnMatch(descSource, descRef, knn_matches, 2);
+
+        double minDescDistRatio = 0.8; 
+        for(auto it = knn_matches.begin(); it != knn_matches.end(); ++it){
+            if((*it)[0].distance < minDescDistRatio * (*it)[1].distance){
+                matches.push_back((*it)[0]);
+            }
+        }
     }
 }
 
@@ -96,6 +106,72 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         cv::Mat visImage = img.clone();
         cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
         string windowName = "Shi-Tomasi Corner Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+}
+
+// Use one of several types of state-of-art detectors to detect keypoints in image
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis=false){
+    cv::Ptr<cv::FeatureDetector> detector;
+    // Creating BRISK detector
+    if(detectorType.compare("BRISK") == 0){
+        detector = cv::BRISK::create();
+    }
+    // Createing FAST detector
+    else if(detectorType.compare("FAST") == 0){
+        detector = cv::FastFeatureDetector::create(30, true, cv::FastFeatureDetector::TYPE_9_16);
+    }
+    // Creating ORB detector
+    else if(detectorType.compare("ORB") == 0){
+        detector = cv::ORB::create();
+;
+    }
+    // Create AZAKE detector
+    else if (detectorType.compare("AZAKE") == 0){
+
+        detector = cv::AKAZE::create();
+    }
+    // Create and use Harris detector.
+    else if(detectorType.compare("HARRIS") == 0){
+        // compute detector parameters based on image size
+        int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
+        double maxOverlap = 0.0; // max. permissible overlap between two features in %
+        double minDistance = (1.0 - maxOverlap) * blockSize;
+        int maxCorners = img.rows * img.cols / max(1.0, minDistance); // max. num. of keypoints
+
+        double qualityLevel = 0.01; // minimal accepted quality of image corners
+        double k = 0.04;
+        bool useHarris = true;
+        // Apply corner detection using Harris
+        vector<cv::Point2f> corners;
+        cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, useHarris, k);
+
+        // add corners to result vector
+        for (auto it = corners.begin(); it != corners.end(); ++it)
+        {
+
+            cv::KeyPoint newKeyPoint;
+            newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
+            newKeyPoint.size = blockSize;
+            keypoints.push_back(newKeyPoint);
+        }
+    }
+    // Create SIFT detector
+    else if(detectorType.compare("SIFT") == 0){
+        detector = cv::xfeatures2d::SIFT::create();
+    }
+
+
+    detector->detect(img, keypoints);
+
+    // visualize results
+    if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = detectorType + " Detector Results";
         cv::namedWindow(windowName, 6);
         imshow(windowName, visImage);
         cv::waitKey(0);

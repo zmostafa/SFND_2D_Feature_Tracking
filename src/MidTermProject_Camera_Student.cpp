@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <queue>
 #include <cmath>
 #include <limits>
 #include <opencv2/core.hpp>
@@ -39,7 +40,7 @@ int main(int argc, const char *argv[])
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
-
+    queue<DataFrame> ringBuffer;  // Ring Buffer, ToDo : create a class of real ring buffer instead of queue ?.
     /* MAIN LOOP OVER ALL IMAGES */
 
     for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
@@ -62,7 +63,11 @@ int main(int argc, const char *argv[])
         // push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = imgGray;
-        dataBuffer.push_back(frame);
+        // dataBuffer.push_back(frame);
+        ringBuffer.push(frame);
+        if(ringBuffer.size() > dataBufferSize){
+            ringBuffer.pop();
+        }
 
         //// EOF STUDENT ASSIGNMENT
         cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
@@ -84,6 +89,7 @@ int main(int argc, const char *argv[])
         else
         {
             //...
+            detKeypointsModern(keypoints, img, detectorType, false);
         }
         //// EOF STUDENT ASSIGNMENT
 
