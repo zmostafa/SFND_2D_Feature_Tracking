@@ -112,8 +112,43 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     }
 }
 
+void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis){
+    // compute detector parameters based on image size
+    int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
+    double maxOverlap = 0.0; // max. permissible overlap between two features in %
+    double minDistance = (1.0 - maxOverlap) * blockSize;
+    int maxCorners = img.rows * img.cols / max(1.0, minDistance); // max. num. of keypoints
+
+    double qualityLevel = 0.01; // minimal accepted quality of image corners
+    double k = 0.04;
+    bool useHarris = true;
+    // Apply corner detection using Harris
+    vector<cv::Point2f> corners;
+    cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, useHarris, k);
+
+    // add corners to result vector
+    for (auto it = corners.begin(); it != corners.end(); ++it)
+    {
+
+        cv::KeyPoint newKeyPoint;
+        newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
+        newKeyPoint.size = blockSize;
+        keypoints.push_back(newKeyPoint);
+    }
+
+    // visualize results
+    if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = "Harris Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+}
 // Use one of several types of state-of-art detectors to detect keypoints in image
-void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis=false){
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis){
     cv::Ptr<cv::FeatureDetector> detector;
     // Creating BRISK detector
     if(detectorType.compare("BRISK") == 0){
@@ -132,31 +167,6 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     else if (detectorType.compare("AZAKE") == 0){
 
         detector = cv::AKAZE::create();
-    }
-    // Create and use Harris detector.
-    else if(detectorType.compare("HARRIS") == 0){
-        // compute detector parameters based on image size
-        int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
-        double maxOverlap = 0.0; // max. permissible overlap between two features in %
-        double minDistance = (1.0 - maxOverlap) * blockSize;
-        int maxCorners = img.rows * img.cols / max(1.0, minDistance); // max. num. of keypoints
-
-        double qualityLevel = 0.01; // minimal accepted quality of image corners
-        double k = 0.04;
-        bool useHarris = true;
-        // Apply corner detection using Harris
-        vector<cv::Point2f> corners;
-        cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, useHarris, k);
-
-        // add corners to result vector
-        for (auto it = corners.begin(); it != corners.end(); ++it)
-        {
-
-            cv::KeyPoint newKeyPoint;
-            newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
-            newKeyPoint.size = blockSize;
-            keypoints.push_back(newKeyPoint);
-        }
     }
     // Create SIFT detector
     else if(detectorType.compare("SIFT") == 0){

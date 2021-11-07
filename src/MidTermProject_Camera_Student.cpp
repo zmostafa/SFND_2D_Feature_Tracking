@@ -86,6 +86,9 @@ int main(int argc, const char *argv[])
         {
             detKeypointsShiTomasi(keypoints, imgGray, false);
         }
+        else if(detectorType.compare("HARRIS") == 0){
+            detKeypointsHarris(keypoints, img, false);
+        }
         else
         {
             //...
@@ -98,10 +101,16 @@ int main(int argc, const char *argv[])
 
         // only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
+        // cx, cy, width, height
         cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle)
         {
             // ...
+            for(auto it = keypoints.begin(); it != keypoints.end(); ++it){
+                if( it->pt.x < vehicleRect.x && it->pt.y > vehicleRect.y){
+                    keypoints.erase(it);
+                }
+            }
         }
 
         //// EOF STUDENT ASSIGNMENT
