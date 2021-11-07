@@ -30,13 +30,18 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
-
+        double t = (double)cv::getTickCount();
         matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+        cout << "(NN) with n= " << matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
     }
     else if (selectorType.compare("SEL_KNN") == 0)
     { // k nearest neighbors (k=2)
         vector<vector<cv::DMatch>> knn_matches;
+        double t = (double)cv::getTickCount();
         matcher->knnMatch(descSource, descRef, knn_matches, 2);
+        t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+        cout << "(KNN) with n= " << knn_matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
 
         double minDescDistRatio = 0.8; 
         for(auto it = knn_matches.begin(); it != knn_matches.end(); ++it){
@@ -139,6 +144,7 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
     double k = 0.04;
     bool useHarris = true;
     // Apply corner detection using Harris
+    double t = (double)cv::getTickCount();
     vector<cv::Point2f> corners;
     cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, useHarris, k);
 
@@ -151,7 +157,8 @@ void detKeypointsHarris(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool
         newKeyPoint.size = blockSize;
         keypoints.push_back(newKeyPoint);
     }
-
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    cout << "Harris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
     // visualize results
     if (bVis)
     {
@@ -189,9 +196,10 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
         detector = cv::xfeatures2d::SIFT::create();
     }
 
-
+    double t = (double)cv::getTickCount();
     detector->detect(img, keypoints);
-
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    cout << detectorType << " detector in " << 1000 * t / 1.0 << " ms";
     // visualize results
     if (bVis)
     {
