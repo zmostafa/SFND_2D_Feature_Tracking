@@ -41,3 +41,41 @@ Then, add *C:\vcpkg\installed\x64-windows\bin* and *C:\vcpkg\installed\x64-windo
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./2D_feature_tracking`.
+
+## MP.0 Mid-Term Report
+Explains implementation and display test bench results.
+
+### MP.1 Data Buffer Optimization
+`daataBuffer` is implemented as as `std::vector`, which allows us to check for its size,delete from it when the size passes a limit defined in code.
+
+### MP.2 Keypoint Detection
+Please checkfile `matching2D_Student.cpp` from line 152 for `Harris` detector implementation,and from line 215 for the rest.
+
+### MP.3 Keypoint Removal
+`Rect` interface provides a `contains` API than can check for existing of point(x,y) in the data structure.
+
+### MP.4 Keypoint Descriptors
+Please checkfile `matching2D_Student.cpp` from line 65
+
+### MP.5 Descriptor Matching
+Please checkfile `matching2D_Student.cpp` from line 23
+
+### MP.6 Descriptor Distance Ratio
+Please checkfile `matching2D_Student.cpp` from line 45
+
+### MP.7 Performance Evaluation 1
+### MP.8 Performance Evaluation 2
+Please check `testbench.csv` for all recorded numbers.
+
+### MP.9 Performance Evaluation 3
+<figure class="image">
+  <img src="images/numOfPoints.png" width="820" height="248" />
+  <figcaption align = "center"><b>F1. Sorted by Matched Points</b></figcaption>
+  <img src="images/faster.png" width="820" height="248" />
+  <figcaption align = "center"><b>F2. Sorted by execution time</b></figcaption>
+</figure>
+
+## TOP 3 Detector/Descriptor 
+FAST/BRIEF <br />
+FAST/ORB<br />
+SHITOMASI/ORB<br />
