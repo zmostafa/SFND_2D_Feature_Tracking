@@ -30,6 +30,9 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
         }
         matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
     }
+    else{
+        throw("Invalid Matcher type : " + matcherType);
+    }
 
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
@@ -53,6 +56,8 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
                 matches.push_back((*it)[0]);
             }
         }
+    }else{
+        throw("Invalid Selector Type " + selectorType);
     }
 }
 
@@ -60,8 +65,6 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
 {
     // select appropriate descriptor
-    cout << "in DescKeypoints" <<endl;
-    cout << "keypoints size = " << keypoints.size() << endl;
     cv::Ptr<cv::DescriptorExtractor> extractor;
     if (descriptorType.compare("BRISK") == 0)
     {
@@ -78,7 +81,7 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
         extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
     }
     // Creating ORB descriptor and detector.
-    else if(descriptorType.compare("ORB")){
+    else if(descriptorType.compare("ORB") == 0){
         extractor = cv::ORB::create();
     }
     else if(descriptorType.compare("FREAK") == 0){
@@ -88,7 +91,14 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
         extractor = cv::AKAZE::create();
     }
     else if(descriptorType.compare("SIFT") == 0){
-        extractor = cv::xfeatures2d::SIFT::create();
+        #ifdef CV_VERSION_4_5_4
+            extractor = cv::SIFT::create();
+        #else
+            extractor = cv::xfeatures2d::SIFT::create();
+        #endif
+    }
+    else{
+        throw ("Invalid Argument: Descriptor " + descriptorType);
     }
 
     // perform feature description
@@ -215,16 +225,21 @@ void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std:
     // Creating ORB detector
     else if(detectorType.compare("ORB") == 0){
         detector = cv::ORB::create();
-;
     }
     // Create AZAKE detector
-    else if (detectorType.compare("AZAKE") == 0){
-
+    else if (detectorType.compare("AKAZE") == 0){
         detector = cv::AKAZE::create();
     }
     // Create SIFT detector
     else if(detectorType.compare("SIFT") == 0){
-        detector = cv::xfeatures2d::SIFT::create();
+        #ifdef CV_VERSION_4_5_4
+            detector = cv::SIFT::create(); 
+        #else
+            detector = cv::xfeatures2d::SIFT::create();
+        #endif
+    }
+    else{
+        throw ("Invalid argument: Detector " + detectorType);
     }
 
     double t = (double)cv::getTickCount();

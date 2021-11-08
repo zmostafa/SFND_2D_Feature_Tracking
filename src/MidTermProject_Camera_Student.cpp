@@ -43,19 +43,19 @@ int main(int argc, const char *argv[])
 
     // Setting testbench result output file 
     ofstream outCVS; 
-    outCVS.open("./testbench.cvs");
-    outCVS << "Detectorm Descriptor, Image No., No. of matched points, Total Time";
+    outCVS.open("testbench.csv", std::ios_base::app);
+    outCVS << "Detector, Descriptor, Image No., No. of matched points, Total Time" << endl;
     /* MAIN LOOP OVER ALL IMAGES */
     vector<string> detectors = {"SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
-    vector<string> descriptors = {"BRIEF", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
+    vector<string> descriptors = {"BRIEF", "FREAK", "BRISK", "ORB", "AKAZE", "SIFT"};
 
     for(auto detector : detectors){
         for(auto descriptor : descriptors){
-            if((detector == "SIFT" && descriptor == "ORB") || 
-            (detector == "SHITOMASI" && descriptor == "ORB")    ||
-            (detector == "ORB" && descriptor == "SIFT")    || 
-            (detector == "AKAZE" && descriptor != "AKAZE") || 
-            (detector != "AKAZE" && descriptor == "AKAZE")){
+            // if((detector == "SIFT" && descriptor == "ORB") || 
+            // (detector == "SHITOMASI" && descriptor == "ORB")    ||
+            // (detector == "ORB" && descriptor == "SIFT")    || 
+            if((detector.compare("AKAZE") == 0 && descriptor.compare("AKAZE") != 0) || 
+            (detector.compare("AKAZE") != 0 && descriptor.compare("AKAZE") == 0)){
                 continue;
             }
             for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
@@ -84,7 +84,6 @@ int main(int argc, const char *argv[])
                 }
 
                 //// EOF STUDENT ASSIGNMENT
-                cout << "Detector : " << detector << " Descriptor: " << descriptor << endl;
                 cout << "#1 : LOAD IMAGE " << imgNumber.str() << " INTO BUFFER done" << endl;
 
                 /* DETECT IMAGE KEYPOINTS */
@@ -103,12 +102,19 @@ int main(int argc, const char *argv[])
                     detKeypointsShiTomasi(keypoints, imgGray, false);
                 }
                 else if(detectorType.compare("HARRIS") == 0){
-                    detKeypointsHarris(keypoints, img, false);
+                    detKeypointsHarris(keypoints, imgGray, false);
                 }
                 else
                 {
                     //...
-                    detKeypointsModern(keypoints, img, detectorType, false);
+                    try
+                    {
+                        detKeypointsModern(keypoints, imgGray, detectorType, false);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cout << e.what() << '\n';
+                    }
                 }
                 //// EOF STUDENT ASSIGNMENT
 
@@ -161,9 +167,15 @@ int main(int argc, const char *argv[])
                 cv::Mat descriptors;
                 // string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
                 string descriptorType = descriptor;
-                descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+                try
+                {
+                    descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
+                }
+                catch(const std::exception& e)
+                {
+                    std::cout << e.what() << '\n';
+                }
                 //// EOF STUDENT ASSIGNMENT
-                cout << "out of descKeypoints" << endl;
                 // push descriptors for current frame to end of data buffer
                 (dataBuffer.end() - 1)->descriptors = descriptors;
 
@@ -176,16 +188,24 @@ int main(int argc, const char *argv[])
 
                     vector<cv::DMatch> matches;
                     string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-                    string descriptorType = (descriptorType.compare("SIFT") == 0) ? "DES_HOG" : "DES_BINARY"; // DES_BINARY, DES_HOG
+                    string descriptorType = (descriptor.compare("SIFT") == 0) ? "DES_HOG" : "DES_BINARY"; // DES_BINARY, DES_HOG
                     string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
                     //// STUDENT ASSIGNMENT
                     //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
                     //// TASK MP.6 -> add KNN match selection and perform descriptor distance ratio filtering with t=0.8 in file matching2D.cpp
 
-                    matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
+                    try
+                    {
+                        matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                                     (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
                                     matches, descriptorType, matcherType, selectorType);
+                    }
+                    catch(const std::exception& e)
+                    {
+                        std::cout << e.what() << '\n';
+                    }
+                    
 
                     //// EOF STUDENT ASSIGNMENT
 
@@ -193,9 +213,9 @@ int main(int argc, const char *argv[])
                     (dataBuffer.end() - 1)->kptMatches = matches;
 
                     cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
-                    auto endTime = chrono::steady_clock:: now() - startTime;
-
-                    outCVS << detector << "," << descriptor << "," << imgIndex << "," << matches.size() << "," << endTime.count() << endl;
+                    auto endTime = chrono::steady_clock::now() - startTime;
+                    // Detector, Descriptor, Image No., No. of matched points, Total Time
+                    outCVS << detector << "," << descriptor << "," << imgIndex << "," << matches.size() << "," << chrono::duration_cast<chrono::milliseconds>(endTime).count() << endl;
                     // visualize matches between current and previous image
                     bVis = true;
                     if (bVis)
