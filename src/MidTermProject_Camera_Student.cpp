@@ -40,11 +40,24 @@ int main(int argc, const char *argv[])
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
+
+    // Setting testbench result output file 
+    ofstream outCVS; 
+    outCVS.open("./testbench.cvs");
+    outCVS << "Detectorm Descriptor, Image No., No. of matched points, Total Time";
     /* MAIN LOOP OVER ALL IMAGES */
     vector<string> detectors = {"SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
-    vector<string> descriptors = {"SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
+    vector<string> descriptors = {"BRIEF", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
+
     for(auto detector : detectors){
         for(auto descriptor : descriptors){
+            if((detector == "SIFT" && descriptor == "ORB") || 
+            (detector == "SHITOMASI" && descriptor == "ORB")    ||
+            (detector == "ORB" && descriptor == "SIFT")    || 
+            (detector == "AKAZE" && descriptor != "AKAZE") || 
+            (detector != "AKAZE" && descriptor == "AKAZE")){
+                continue;
+            }
             for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
             {
                 /* LOAD IMAGE INTO BUFFER */
@@ -71,10 +84,11 @@ int main(int argc, const char *argv[])
                 }
 
                 //// EOF STUDENT ASSIGNMENT
-                cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
+                cout << "Detector : " << detector << " Descriptor: " << descriptor << endl;
+                cout << "#1 : LOAD IMAGE " << imgNumber.str() << " INTO BUFFER done" << endl;
 
                 /* DETECT IMAGE KEYPOINTS */
-
+                auto startTime = chrono::steady_clock::now();
                 // extract 2D keypoints from current image
                 vector<cv::KeyPoint> keypoints; // create empty feature list for current image
                 // string detectorType = "BRISK";
@@ -143,13 +157,13 @@ int main(int argc, const char *argv[])
                 //// STUDENT ASSIGNMENT
                 //// TASK MP.4 -> add the following descriptors in file matching2D.cpp and enable string-based selection based on descriptorType
                 //// -> BRIEF, ORB, FREAK, AKAZE, SIFT
-
+                cout << dataBuffer.size() << endl;
                 cv::Mat descriptors;
                 // string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
                 string descriptorType = descriptor;
                 descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
                 //// EOF STUDENT ASSIGNMENT
-
+                cout << "out of descKeypoints" << endl;
                 // push descriptors for current frame to end of data buffer
                 (dataBuffer.end() - 1)->descriptors = descriptors;
 
@@ -162,8 +176,8 @@ int main(int argc, const char *argv[])
 
                     vector<cv::DMatch> matches;
                     string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-                    string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-                    string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+                    string descriptorType = (descriptorType.compare("SIFT") == 0) ? "DES_HOG" : "DES_BINARY"; // DES_BINARY, DES_HOG
+                    string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
                     //// STUDENT ASSIGNMENT
                     //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
@@ -179,7 +193,9 @@ int main(int argc, const char *argv[])
                     (dataBuffer.end() - 1)->kptMatches = matches;
 
                     cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+                    auto endTime = chrono::steady_clock:: now() - startTime;
 
+                    outCVS << detector << "," << descriptor << "," << imgIndex << "," << matches.size() << "," << endTime.count() << endl;
                     // visualize matches between current and previous image
                     bVis = true;
                     if (bVis)
@@ -194,14 +210,16 @@ int main(int argc, const char *argv[])
                         string windowName = "Matching keypoints between two camera images";
                         cv::namedWindow(windowName, 7);
                         cv::imshow(windowName, matchImg);
-                        cout << "Press key to continue to next image" << endl;
-                        cv::waitKey(0); // wait for key to be pressed
+                        // cout << "Press key to continue to next image" << endl;
+                        // cv::waitKey(0); // wait for key to be pressed
                     }
                     bVis = false;
                 }
 
             } // eof loop over all images
+            dataBuffer.clear();
         }
     }
+    outCVS.close();
     return 0;
 }

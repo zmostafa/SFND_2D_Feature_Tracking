@@ -49,7 +49,7 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 
         double minDescDistRatio = 0.8; 
         for(auto it = knn_matches.begin(); it != knn_matches.end(); ++it){
-            if((*it)[0].distance < minDescDistRatio * (*it)[1].distance){
+            if((*it)[0].distance < minDescDistRatio * (*it)[1].distance && (*it).size() == 2){
                 matches.push_back((*it)[0]);
             }
         }
@@ -60,6 +60,8 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
 {
     // select appropriate descriptor
+    cout << "in DescKeypoints" <<endl;
+    cout << "keypoints size = " << keypoints.size() << endl;
     cv::Ptr<cv::DescriptorExtractor> extractor;
     if (descriptorType.compare("BRISK") == 0)
     {
